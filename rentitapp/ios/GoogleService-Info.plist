@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyDxWU-6p4SfeD2AWShHMKQq8h0Ahokxpa8</string>
+	<key>GCM_SENDER_ID</key>
+	<string>83055890324</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.rentitapp</string>
+	<key>PROJECT_ID</key>
+	<string>rentitapp-920d6</string>
+	<key>STORAGE_BUCKET</key>
+	<string>rentitapp-920d6.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:83055890324:ios:4b89cd87eab274c8314981</string>
+</dict>
+</plist>
