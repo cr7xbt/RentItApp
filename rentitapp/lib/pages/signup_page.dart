@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_page.dart';
+import '../data/auth_service.dart';
 
 class SignupPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
   Future<void> signupUser(BuildContext context) async {
     try {
@@ -15,6 +17,7 @@ class SignupPage extends StatelessWidget {
 
       User? user = userCredential.user;
       if (user != null) {
+        await _authService.saveUserToSupabase(); // Save user to Supabase
         await user.sendEmailVerification(); // Send email verification
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Verification email sent. Please check your inbox.")),

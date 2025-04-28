@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'address_input_page.dart';
 import 'dart:io';
 
@@ -110,7 +111,12 @@ class _ShopPortalDetailsPageState extends State<ShopPortalDetailsPage> {
         return;
       }
 
-      // **** Fixed: treat the response as List directly
+      final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) {
+        throw Exception('No user is currently signed in.');
+      }
+
+      // Insert shop data with user_email
       final response = await supabase.from('shops').insert({
         'name': _nameController.text,
         'description': _descriptionController.text,
@@ -122,9 +128,10 @@ class _ShopPortalDetailsPageState extends State<ShopPortalDetailsPage> {
         'longitude': _longitude,
         'opening_hours': 'Mon-Sat: ${_startTime?.format(context)} - ${_endTime?.format(context)}',
         'image_url': imageUrl,
+        'user_email': firebaseUser.email,
       }).select();
 
-      if (response.isNotEmpty) { // **** Updated: check if list has rows
+      if (response.isNotEmpty) {
         Navigator.pop(context, {
           'name': _nameController.text,
           'description': _descriptionController.text,

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'home_page.dart';
 import 'signup_page.dart';
+import '../data/auth_service.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
   Future<void> loginUser(BuildContext context) async {
     try {
@@ -14,12 +16,10 @@ class LoginPage extends StatelessWidget {
         password: passwordController.text.trim(),
       );
 
-      print("UserCredential: ${userCredential.toString()}");
-      print("User: ${userCredential.user.toString()}");
-
       User? user = userCredential.user;
       if (user != null) {
         if (user.emailVerified) {
+          await _authService.updateLoginStatus(true); // Update login status in Supabase
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => HomePage(user: user)),

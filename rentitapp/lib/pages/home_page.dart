@@ -6,6 +6,7 @@ import 'account_tab.dart';
 import 'state_selection_page.dart';
 import 'products_tab.dart';
 import 'shop_portal_tab.dart'; // Import the shop portal tab
+import '../data/auth_service.dart';
 
 class HomePage extends StatefulWidget {
   final User user;
@@ -19,6 +20,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedIndex = 0;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -39,11 +41,19 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   Future<void> logoutUser(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
+    try {
+      await _authService.updateLoginStatus(false); // Update login status in Supabase
+      await FirebaseAuth.instance.signOut();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    } catch (e) {
+      print('Error during logout: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Logout failed: $e")),
+      );
+    }
   }
 
   @override
