@@ -77,14 +77,16 @@ class _ShopPortalDetailsPageState extends State<ShopPortalDetailsPage> {
     try {
       final fileName = 'shop_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      final String filePath = await supabase.storage
+      String filePath = await supabase.storage
           .from('shop-images')
           .upload(fileName, image);
+      
+      filePath = filePath.split('shop-images')[1]; // Extract the file path from the response
 
       final String publicUrl = supabase.storage
           .from('shop-images')
           .getPublicUrl(filePath);
-
+      
       return publicUrl;
     } catch (e) {
       print('Error uploading image: $e');
@@ -102,9 +104,19 @@ class _ShopPortalDetailsPageState extends State<ShopPortalDetailsPage> {
       return;
     }
 
+    // Show loading indicator while uploading image
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(child: CircularProgressIndicator());
+      },
+    );
+
     try {
       final imageUrl = await _uploadImageToSupabase(_selectedImage!);
       if (imageUrl == null) {
+        Navigator.pop(context); // Dismiss loading indicator
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to upload image')),
         );
@@ -113,6 +125,7 @@ class _ShopPortalDetailsPageState extends State<ShopPortalDetailsPage> {
 
       final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (firebaseUser == null) {
+        Navigator.pop(context); // Dismiss loading indicator
         throw Exception('No user is currently signed in.');
       }
 
@@ -131,12 +144,15 @@ class _ShopPortalDetailsPageState extends State<ShopPortalDetailsPage> {
         'user_email': firebaseUser.email,
       }).select();
 
+      Navigator.pop(context); // Dismiss loading indicator
+
       if (response.isNotEmpty) {
         Navigator.pop(context, {
           'name': _nameController.text,
           'description': _descriptionController.text,
           'city': _address?.split(',').first ?? '',
           'state': _state,
+          'image_url': imageUrl, // Pass the image URL back
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -144,6 +160,7 @@ class _ShopPortalDetailsPageState extends State<ShopPortalDetailsPage> {
         );
       }
     } catch (e) {
+      Navigator.pop(context); // Dismiss loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to add shop: $e')),
       );

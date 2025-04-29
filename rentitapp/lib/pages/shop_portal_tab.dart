@@ -35,8 +35,8 @@ class _ShopPortalTabState extends State<ShopPortalTab> {
           .execute();
 
       if (response.status != 200) {
-        print (response.status);
-        print (response.data);
+        print(response.status);
+        print(response.data);
         throw Exception('Failed to fetch shops: ${response.toString()}');
       }
 
@@ -45,6 +45,7 @@ class _ShopPortalTabState extends State<ShopPortalTab> {
           'name': shop['name']?.toString() ?? 'Unnamed',
           'description': shop['description']?.toString() ?? '',
           'state': shop['state']?.toString() ?? '',
+          'image_url': shop['image_url']?.toString() ?? '', // Add image URL
         }));
       });
     } catch (e) {
@@ -72,6 +73,7 @@ class _ShopPortalTabState extends State<ShopPortalTab> {
           'description': result['description']?.toString() ?? '',
           'city': result['city']?.toString() ?? '',
           'state': result['state']?.toString() ?? '',
+          'image_url': result['image_url']?.toString() ?? '', // Add image URL
         });
       });
     }
@@ -96,16 +98,71 @@ class _ShopPortalTabState extends State<ShopPortalTab> {
                 final shop = _shops[index];
                 return Card(
                   margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: ListTile(
-                    title: Text(shop['name'] ?? 'Unknown Shop'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(shop['description'] ?? 'No Description'),
-                        SizedBox(height: 4),
-                        Text('${shop['state']}'),
-                      ],
-                    ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Shop Image
+                      ClipRRect(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                        child: shop['image_url'] != null && shop['image_url']!.isNotEmpty
+                            ? Image.network(
+                                shop['image_url']!,
+                                height: 150,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.asset(
+                                'assets/images/default_shop.png', // Fallback image
+                                height: 150,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Shop Name
+                            Text(
+                              shop['name'] ?? 'Unknown Shop',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            // Shop Description
+                            Text(
+                              shop['description'] ?? 'No Description',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            // Shop State
+                            Row(
+                              children: [
+                                Icon(Icons.location_on, size: 16, color: Colors.grey),
+                                SizedBox(width: 4),
+                                Text(
+                                  shop['state'] ?? '',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
