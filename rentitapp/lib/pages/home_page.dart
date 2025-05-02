@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_page.dart';
-import 'orders_tab.dart';
+import 'cart_tab.dart'; // Updated import from orders_tab.dart to cart_tab.dart
 import 'account_tab.dart';
 import 'state_selection_page.dart';
 import 'products_tab.dart';
@@ -70,10 +70,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   'assets/logo.png', // Replace with your logo image path
                   height: 40, // Adjust the height as needed
                 ),
-                IconButton(
-                  icon: Icon(Icons.logout),
-                  onPressed: () => logoutUser(context),
-                ),
               ],
             ),
           ),
@@ -93,7 +89,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ],
         ),
       ),
-      OrdersTab(),
+      CartTab(), // Updated reference from OrdersTab to CartTab
       ShopPortalTab(), // Added Shop Portal Tab
       AccountTab(),
     ];
@@ -110,8 +106,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Orders',
+            icon: Icon(Icons.shopping_cart), // Updated icon from list to shopping_cart
+            label: 'Cart', // Updated label from Orders to Cart
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.store), // Icon for Shops

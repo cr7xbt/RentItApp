@@ -16,6 +16,7 @@ class _ShopItemsPageState extends State<ShopItemsPage> {
   final SupabaseClient supabase = Supabase.instance.client;
   List<ShopItemModel> items = [];
   bool isLoading = true;
+  final List<ShopItemModel> cartItems = []; // List to store cart items
 
   @override
   void initState() {
@@ -24,25 +25,34 @@ class _ShopItemsPageState extends State<ShopItemsPage> {
   }
 
   Future<void> fetchItems() async {
-  try {
-    final response = await supabase
-        .from('items')
-        .select('item_id, shop_id, name, description, price, stock_quantity, category, image_url, created_at')
-        .eq('shop_id', widget.shop.id);
+    try {
+      final response = await supabase
+          .from('items')
+          .select('item_id, shop_id, name, description, price, stock_quantity, category, image_url, created_at')
+          .eq('shop_id', widget.shop.id);
 
-    final data = response as List<dynamic>; // Cast response to a List
-    setState(() {
-      items = data.map((item) => ShopItemModel.fromMap(item)).toList();
-      isLoading = false;
-    });
-  } catch (e) {
-    // Handle any errors
-    print('Error fetching items: $e');
-    setState(() {
-      isLoading = false;
-    });
+      final data = response as List<dynamic>; // Cast response to a List
+      setState(() {
+        items = data.map((item) => ShopItemModel.fromMap(item)).toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      // Handle any errors
+      print('Error fetching items: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
-}
+
+  void addToCart(ShopItemModel item) {
+    setState(() {
+      cartItems.add(item);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("${item.name} added to cart!")),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +124,10 @@ class _ShopItemsPageState extends State<ShopItemsPage> {
                                 ),
                               ],
                             ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.add),
+                            onPressed: () => addToCart(item),
                           ),
                         ],
                       ),

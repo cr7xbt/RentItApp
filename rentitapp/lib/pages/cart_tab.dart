@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class OrdersTab extends StatelessWidget {
+class CartTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Text(
-        'Orders',
+        'Cart',
         style: TextStyle(fontSize: 24),
       ),
     );
