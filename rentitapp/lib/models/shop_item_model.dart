@@ -8,6 +8,7 @@ class ShopItemModel {
   final String? category;
   final String? imageUrl;
   final DateTime createdAt;
+  int quantity; // Add quantity property
 
   ShopItemModel({
     required this.itemId,
@@ -19,6 +20,7 @@ class ShopItemModel {
     this.category,
     this.imageUrl,
     required this.createdAt,
+    this.quantity = 1, // Default quantity to 1
   });
 
   // Factory method to create a ShopItemModel from a map
@@ -33,6 +35,7 @@ class ShopItemModel {
       category: map['category'],
       imageUrl: map['image_url'],
       createdAt: DateTime.parse(map['created_at']),
+      quantity: map['quantity'] ?? 1, // Default to 1 if not provided
     );
   }
 }

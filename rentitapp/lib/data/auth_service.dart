@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
   final firebase_auth.FirebaseAuth _firebaseAuth = firebase_auth.FirebaseAuth.instance;
@@ -55,5 +56,21 @@ class AuthService {
     } catch (e) {
       print('Error updating login status: $e');
     }
+  }
+}
+
+class SecureStorageService {
+  final _storage = const FlutterSecureStorage();
+
+  Future<void> saveSecret(String key, String value) async {
+    await _storage.write(key: key, value: value);
+  }
+
+  Future<String?> getSecret(String key) async {
+    return await _storage.read(key: key);
+  }
+
+  Future<void> deleteSecret(String key) async {
+    await _storage.delete(key: key);
   }
 }

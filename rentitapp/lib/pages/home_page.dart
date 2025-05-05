@@ -7,6 +7,8 @@ import 'state_selection_page.dart';
 import 'products_tab.dart';
 import 'shop_portal_tab.dart'; // Import the shop portal tab
 import '../data/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../models/cart_provider.dart';
 
 class HomePage extends StatefulWidget {
   final User user;
@@ -58,6 +60,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final cartItemCount = Provider.of<CartProvider>(context).cartItems.length;
+
     final List<Widget> _pages = <Widget>[
       Scaffold(
         appBar: AppBar(
@@ -100,20 +104,48 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
+        items: <BottomNavigationBarItem>[
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart), // Updated icon from list to shopping_cart
-            label: 'Cart', // Updated label from Orders to Cart
+            icon: Stack(
+              children: [
+                Icon(Icons.shopping_cart),
+                if (cartItemCount > 0)
+                  Positioned(
+                    right: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(1.4), // Reduced padding for smaller badge
+                      decoration: BoxDecoration(
+                        color: Colors.green, // Changed color to green
+                        borderRadius: BorderRadius.circular(7), // Adjusted for smaller size
+                      ),
+                      constraints: BoxConstraints(
+                        minWidth: 11.2, // Reduced width for smaller badge
+                        minHeight: 11.2, // Reduced height for smaller badge
+                      ),
+                      child: Text(
+                        '$cartItemCount',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8.4, // Reduced font size for smaller badge
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            label: 'Cart',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.store), // Icon for Shops
-            label: 'Shops', // Label for Shops
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.store),
+            label: 'Shops',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.account_circle),
             label: 'Account',
           ),
