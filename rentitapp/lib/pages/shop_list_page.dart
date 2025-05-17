@@ -83,15 +83,15 @@ class _ShopListPageState extends State<ShopListPage> {
                     child: Card(
                       elevation: 4.0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16), // Rounded edges for the card
+                        borderRadius: BorderRadius.circular(4),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
+                              topLeft: Radius.circular(4),
+                              topRight: Radius.circular(4),
                             ),
                             child: Image.network(
                               shop.imageUrl ?? '',

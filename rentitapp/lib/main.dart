@@ -6,10 +6,25 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/cart_provider.dart'; // Assuming this is where the CartProvider will be created
 import 'pages/login_page.dart';
 import 'pages/shop_items_page.dart'; // Example import
+import 'dart:io';
+
+void testLocalNetworkAccess() async {
+  try {
+    final result = await InternetAddress.lookup('192.168.1.1'); // Replace with a local IP
+    print('Local network access successful: $result');
+  } catch (e) {
+    print('Local network access failed: $e');
+  }
+}
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter is initialized
-  await dotenv.load(); // Load environment variables from .env file
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await dotenv.load();
+  } catch (e) {
+    print('Error loading .env file: $e');
+  }
+  testLocalNetworkAccess(); // Added for network testing
   await Firebase.initializeApp(); // Initializes Firebase
   // Initialize Supabase
   await Supabase.initialize(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../pages/login_page.dart';
+import '../pages/orders_page.dart'; // Import the OrdersPage
 
 class AccountTab extends StatelessWidget {
   @override
@@ -23,14 +25,18 @@ class AccountTab extends StatelessWidget {
           _buildDivider(),
           _buildListItem(context, 'Help'),
           _buildDivider(),
+          _buildListItem(context, 'Orders', onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => OrdersPage()),
+            );
+          }),
+          _buildDivider(),
           SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: ElevatedButton(
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                Navigator.of(context).pushReplacementNamed('/login');
-              },
+              onPressed: () => _logoutUser(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFFB55239), // Clay Red
                 padding: EdgeInsets.symmetric(vertical: 16),
@@ -46,14 +52,28 @@ class AccountTab extends StatelessWidget {
     );
   }
 
-  Widget _buildListItem(BuildContext context, String title) {
+  void _logoutUser(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logout failed: $e')),
+      );
+    }
+  }
+
+  Widget _buildListItem(BuildContext context, String title, {VoidCallback? onTap}) {
     return ListTile(
       title: Text(
         title,
         style: TextStyle(fontSize: 16, color: Color(0xFF5A6A89)), // Lighter Indigo Dye
       ),
       trailing: Icon(Icons.arrow_forward_ios, color: Color(0xFFC1A87D)), // Brass Gold
-      onTap: () {}, // Placeholder for navigation
+      onTap: onTap ?? () {}, // Use the provided onTap or default to an empty function
     );
   }
 

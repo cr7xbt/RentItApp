@@ -152,12 +152,19 @@ class _CartTabState extends State<CartTab> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => CheckoutPage()),
-                );
-              },
+              onPressed: cartItems.isEmpty || totalAmount == 0
+                  ? null
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CheckoutPage(
+                            orderItems: cartItems,
+                            totalAmount: totalAmount,
+                          ),
+                        ),
+                      );
+                    },
               child: Text(
                 'Checkout - ₹${totalAmount.toStringAsFixed(2)}',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

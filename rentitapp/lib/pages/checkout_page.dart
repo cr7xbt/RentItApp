@@ -2,8 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'order_completion_page.dart';
+import '../models/shop_item_model.dart'; // Assuming this is the model for your shop items
+import 'package:provider/provider.dart' as provider;
+import '../models/cart_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 class CheckoutPage extends StatefulWidget {
+  final List<ShopItemModel> orderItems; // Changed to ShopItemModel type
+  final double totalAmount;
+
+  CheckoutPage({required this.orderItems, required this.totalAmount});
+
   @override
   _CheckoutPageState createState() => _CheckoutPageState();
 }
@@ -16,16 +28,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   void initState() {
     super.initState();
-    Stripe.publishableKey = 'YOUR_STRIPE_PUBLISHABLE_KEY'; // Replace with your Stripe publishable key
+    Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY']!; // Load Stripe publishable key from .env
   }
 
   Future<void> _startPayment() async {
     try {
       // Call your backend to create a Payment Intent
       final response = await http.post(
-        Uri.parse('https://your-backend.com/create-payment-intent'),
-        body: {'amount': '5000', 'currency': 'usd'},
+        Uri.parse(dotenv.env['BACKEND_URL']! + 'create-payment-intent'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'amount': widget.totalAmount.toInt(), // Amount in the smallest currency unit
+          'currency': 'usd',
+        }),
       );
+
+      print("Response from backend: ${response.body}");
       final clientSecret = jsonDecode(response.body)['clientSecret'];
 
       // Initialize payment sheet
@@ -39,13 +59,50 @@ class _CheckoutPageState extends State<CheckoutPage> {
       // Present payment sheet
       await Stripe.instance.presentPaymentSheet();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment successful!')),
+      // Save order to Supabase
+      await _saveOrderToSupabase();
+
+      // Navigate to Order Completion Page with order summary
+      provider.Provider.of<CartProvider>(context, listen: false).clearCart(); // Clear the cart after order completion
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrderCompletionPage(
+            items: widget.orderItems.map((item) => {
+              'name': item.name,
+              'quantity': item.quantity,
+              'price': item.price,
+            }).toList(),
+            totalAmount: widget.totalAmount,
+          ),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Payment failed: $e')),
       );
+    }
+  }
+
+  Future<void> _saveOrderToSupabase() async {
+    try {
+      final supabaseClient = Supabase.instance.client;
+      final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) {
+        throw Exception('No user is currently signed in.');
+      }
+
+      for (var item in widget.orderItems) {
+        await supabaseClient.from('orders').insert({
+          'user_email': firebaseUser.email,
+          'item_id': item.itemId,
+          'quantity': item.quantity,
+          'total_price': item.price * item.quantity,
+          'order_status': 'Pending',
+        }).execute();
+      }
+    } catch (e) {
+      print('Error saving order to Supabase: $e');
     }
   }
 
