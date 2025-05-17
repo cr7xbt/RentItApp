@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/login_page.dart';
 import '../pages/orders_page.dart'; // Import the OrdersPage
+import '../pages/address_page.dart'; // Import the AddressPage
 
 class AccountTab extends StatelessWidget {
   @override
@@ -17,7 +18,12 @@ class AccountTab extends StatelessWidget {
         children: [
           _buildListItem(context, 'Profile'),
           _buildDivider(),
-          _buildListItem(context, 'Addresses'),
+          _buildListItem(context, 'Addresses', onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AddressPage()),
+            );
+          }),
           _buildDivider(),
           _buildListItem(context, 'Payment Methods'),
           _buildDivider(),
