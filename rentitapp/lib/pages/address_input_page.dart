@@ -17,8 +17,8 @@ class _AddressInputPageState extends State<AddressInputPage> {
   String? _recommendedState; // Store the state from the recommended address
   double? _latitude; // Store latitude
   double? _longitude; // Store longitude
-
-  static const kGoogleApiKey = "AIzaSyAGg1jWzDv8Rpr5Vr9W7J_GHjyut5UbXNk"; // Replace with your Google API key
+  
+  static const kGoogleApiKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY'); // Set via --dart-define
 
   Future<void> _fetchRecommendedAddress() async {
     final address =

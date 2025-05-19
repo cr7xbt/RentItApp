@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_google_places_hoc081098/flutter_google_places_hoc081098.dart';
+import 'package:google_maps_webservice/places.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AddNewAddressPage extends StatefulWidget {
   final Map<String, dynamic>? address;
@@ -13,6 +18,7 @@ class AddNewAddressPage extends StatefulWidget {
 
 class _AddNewAddressPageState extends State<AddNewAddressPage> {
   final _formKey = GlobalKey<FormState>();
+
   final TextEditingController addressLine1Controller = TextEditingController();
   final TextEditingController addressLine2Controller = TextEditingController();
   final TextEditingController cityController = TextEditingController();
@@ -20,16 +26,68 @@ class _AddNewAddressPageState extends State<AddNewAddressPage> {
   final TextEditingController zipCodeController = TextEditingController();
   bool isDefault = false;
 
+  late GoogleMapsPlaces _places;
+
   @override
   void initState() {
     super.initState();
+    final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception("Google Maps API key not found in environment variables.");
+    }
+    _places = GoogleMapsPlaces(apiKey: apiKey);
+
     if (widget.address != null) {
-      addressLine1Controller.text = widget.address!['address_line1'] ?? '';
-      addressLine2Controller.text = widget.address!['address_line2'] ?? '';
-      cityController.text = widget.address!['city'] ?? '';
-      stateController.text = widget.address!['state'] ?? '';
-      zipCodeController.text = widget.address!['zip_code'] ?? '';
-      isDefault = widget.address!['is_default'] ?? false;
+      addressLine1Controller.text = widget.address?['address_line1'] ?? '';
+      addressLine2Controller.text = widget.address?['address_line2'] ?? '';
+      cityController.text = widget.address?['city'] ?? '';
+      stateController.text = widget.address?['state'] ?? '';
+      zipCodeController.text = widget.address?['zip_code'] ?? '';
+      isDefault = widget.address?['is_default'] ?? false;
+    }
+  }
+
+  Future<void> _handlePressButton() async {
+    final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception("Google Maps API key not found in environment variables.");
+    }
+
+    Prediction? p = await PlacesAutocomplete.show(
+      context: context,
+      apiKey: apiKey,
+      mode: Mode.overlay,
+      language: "en",
+      components: [Component(Component.country, "us")],
+    );
+
+    if (p != null && p.placeId != null) {
+      PlacesDetailsResponse detail = await _places.getDetailsByPlaceId(p.placeId!);
+      final result = detail.result;
+
+      setState(() {
+        String streetNumber = '';
+        String route = '';
+
+        for (var component in result.addressComponents) {
+          final types = component.types;
+          if (types.contains('street_number')) {
+            streetNumber = component.longName;
+          } else if (types.contains('route')) {
+            route = component.longName;
+          } else if (types.contains('locality')) {
+            cityController.text = component.longName;
+          } else if (types.contains('administrative_area_level_1')) {
+            stateController.text = component.longName;
+          } else if (types.contains('postal_code')) {
+            zipCodeController.text = component.longName;
+          }
+        }
+
+        addressLine1Controller.text = streetNumber.isNotEmpty && route.isNotEmpty
+            ? '$streetNumber $route'
+            : route;
+      });
     }
   }
 
@@ -48,10 +106,15 @@ class _AddNewAddressPageState extends State<AddNewAddressPage> {
             children: [
               TextFormField(
                 controller: addressLine1Controller,
-                decoration: InputDecoration(labelText: 'Address Line 1'),
+                readOnly: true,
+                onTap: _handlePressButton,
+                decoration: InputDecoration(
+                  labelText: 'Address Line 1',
+                  suffixIcon: Icon(Icons.search),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter Address Line 1';
+                    return 'Please select an address';
                   }
                   return null;
                 },
@@ -108,7 +171,7 @@ class _AddNewAddressPageState extends State<AddNewAddressPage> {
               Center(
                 child: ElevatedButton(
                   onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
+                    if (_formKey.currentState?.validate() ?? false) {
                       final supabaseClient = Supabase.instance.client;
                       final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
 
@@ -120,7 +183,6 @@ class _AddNewAddressPageState extends State<AddNewAddressPage> {
                       }
 
                       try {
-                        // If the address is marked as default, unset other default addresses
                         if (isDefault) {
                           await supabaseClient
                               .from('addresses')
@@ -129,7 +191,6 @@ class _AddNewAddressPageState extends State<AddNewAddressPage> {
                               .execute();
                         }
 
-                        // Insert the new address
                         await supabaseClient.from('addresses').insert({
                           'user_email': firebaseUser.email,
                           'address_line1': addressLine1Controller.text,
@@ -140,7 +201,7 @@ class _AddNewAddressPageState extends State<AddNewAddressPage> {
                           'is_default': isDefault,
                         }).execute();
 
-                        Navigator.pop(context, true); // Return true to indicate success
+                        Navigator.pop(context, true);
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Failed to save address: $e')),
