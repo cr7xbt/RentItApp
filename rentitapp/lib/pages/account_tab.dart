@@ -3,15 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/login_page.dart';
 import '../pages/orders_page.dart'; // Import the OrdersPage
 import '../pages/address_page.dart'; // Import the AddressPage
+import 'package:getwidget/getwidget.dart';
 
 class AccountTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFAFAF7), // Off White Background
+      backgroundColor: Colors.white, // Changed page background color to white
       appBar: AppBar(
-        title: Text('Account', style: TextStyle(color: Colors.white)), // Changed font color to white
-        backgroundColor: Color(0xFFB55239), // Clay Red
+        title: Text('Account', style: TextStyle(color: Colors.white)),
+        backgroundColor: Color(0xFF078BDC), // Updated header background color to #35CAFE
         iconTheme: IconThemeData(color: Color(0xFF5A6A89)),
       ),
       body: ListView(
@@ -44,12 +45,16 @@ class AccountTab extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () => _logoutUser(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFB55239), // Clay Red
+                backgroundColor: Color(0xFFF5895A), // Saffron color for logout button
                 padding: EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8), // Rounded corners for a professional look
+                ),
+                elevation: 5, // Add shadow for a professional look
               ),
               child: Text(
                 'Logout',
-                style: TextStyle(fontSize: 18, color: Colors.white),
+                style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -73,19 +78,16 @@ class AccountTab extends StatelessWidget {
   }
 
   Widget _buildListItem(BuildContext context, String title, {VoidCallback? onTap}) {
-    return ListTile(
-      title: Text(
-        title,
-        style: TextStyle(fontSize: 16, color: Color(0xFF5A6A89)), // Lighter Indigo Dye
-      ),
-      trailing: Icon(Icons.arrow_forward_ios, color: Color(0xFFC1A87D)), // Brass Gold
-      onTap: onTap ?? () {}, // Use the provided onTap or default to an empty function
+    return GFListTile(
+      titleText: title,
+      icon: Icon(Icons.arrow_forward_ios, color: Color(0xFFC1A87D)), // Brass Gold
+      onTap: onTap ?? () {},
     );
   }
 
   Widget _buildDivider() {
     return Divider(
-      color: Color(0xFFF4E3D7), // Sandalwood Beige
+      color: Colors.grey.shade300,
       thickness: 1,
       height: 1,
     );

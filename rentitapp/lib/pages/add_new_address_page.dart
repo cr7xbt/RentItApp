@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_google_places_hoc081098/flutter_google_places_hoc081098.dart';
-import 'package:google_maps_webservice/places.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:getwidget/getwidget.dart';
 
 class AddNewAddressPage extends StatefulWidget {
   final Map<String, dynamic>? address;
@@ -26,16 +22,9 @@ class _AddNewAddressPageState extends State<AddNewAddressPage> {
   final TextEditingController zipCodeController = TextEditingController();
   bool isDefault = false;
 
-  late GoogleMapsPlaces _places;
-
   @override
   void initState() {
     super.initState();
-    final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      throw Exception("Google Maps API key not found in environment variables.");
-    }
-    _places = GoogleMapsPlaces(apiKey: apiKey);
 
     if (widget.address != null) {
       addressLine1Controller.text = widget.address?['address_line1'] ?? '';
@@ -47,129 +36,103 @@ class _AddNewAddressPageState extends State<AddNewAddressPage> {
     }
   }
 
-  Future<void> _handlePressButton() async {
-    final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      throw Exception("Google Maps API key not found in environment variables.");
+  String? _validateField(String? value, String fieldName) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter $fieldName';
     }
-
-    Prediction? p = await PlacesAutocomplete.show(
-      context: context,
-      apiKey: apiKey,
-      mode: Mode.overlay,
-      language: "en",
-      components: [Component(Component.country, "us")],
-    );
-
-    if (p != null && p.placeId != null) {
-      PlacesDetailsResponse detail = await _places.getDetailsByPlaceId(p.placeId!);
-      final result = detail.result;
-
-      setState(() {
-        String streetNumber = '';
-        String route = '';
-
-        for (var component in result.addressComponents) {
-          final types = component.types;
-          if (types.contains('street_number')) {
-            streetNumber = component.longName;
-          } else if (types.contains('route')) {
-            route = component.longName;
-          } else if (types.contains('locality')) {
-            cityController.text = component.longName;
-          } else if (types.contains('administrative_area_level_1')) {
-            stateController.text = component.longName;
-          } else if (types.contains('postal_code')) {
-            zipCodeController.text = component.longName;
-          }
-        }
-
-        addressLine1Controller.text = streetNumber.isNotEmpty && route.isNotEmpty
-            ? '$streetNumber $route'
-            : route;
-      });
-    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add New Address'),
+        title: Text(
+          'Add New Address',
+          style: TextStyle(color: Colors.white), // Change text color to white
+        ),
+        backgroundColor: Color(0xFF078BDC), // Set title bar color to 0xFF078BDC
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                controller: addressLine1Controller,
-                readOnly: true,
-                onTap: _handlePressButton,
-                decoration: InputDecoration(
-                  labelText: 'Address Line 1',
-                  suffixIcon: Icon(Icons.search),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GFTextField(
+                  controller: addressLine1Controller,
+                  decoration: InputDecoration(labelText: 'Address Line 1'),
+                  onChanged: (value) {
+                    setState(() {});
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select an address';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: addressLine2Controller,
-                decoration: InputDecoration(labelText: 'Address Line 2'),
-              ),
-              TextFormField(
-                controller: cityController,
-                decoration: InputDecoration(labelText: 'City'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter City';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: stateController,
-                decoration: InputDecoration(labelText: 'State'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter State';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: zipCodeController,
-                decoration: InputDecoration(labelText: 'Zip Code'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Zip Code';
-                  }
-                  return null;
-                },
-              ),
-              Row(
-                children: [
-                  Checkbox(
-                    value: isDefault,
-                    onChanged: (value) {
-                      setState(() {
-                        isDefault = value ?? false;
-                      });
-                    },
+                if (_validateField(addressLine1Controller.text, 'Address Line 1') != null)
+                  Text(
+                    _validateField(addressLine1Controller.text, 'Address Line 1')!,
+                    style: TextStyle(color: Colors.red),
                   ),
-                  Text('Set as Default Address'),
-                ],
-              ),
-              SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
+                SizedBox(height: 10),
+                GFTextField(
+                  controller: addressLine2Controller,
+                  decoration: InputDecoration(labelText: 'Address Line 2'),
+                ),
+                SizedBox(height: 10),
+                GFTextField(
+                  controller: cityController,
+                  decoration: InputDecoration(labelText: 'City'),
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                ),
+                if (_validateField(cityController.text, 'City') != null)
+                  Text(
+                    _validateField(cityController.text, 'City')!,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                SizedBox(height: 10),
+                GFTextField(
+                  controller: stateController,
+                  decoration: InputDecoration(labelText: 'State'),
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                ),
+                if (_validateField(stateController.text, 'State') != null)
+                  Text(
+                    _validateField(stateController.text, 'State')!,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                SizedBox(height: 10),
+                GFTextField(
+                  controller: zipCodeController,
+                  decoration: InputDecoration(labelText: 'Zip Code'),
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                ),
+                if (_validateField(zipCodeController.text, 'Zip Code') != null)
+                  Text(
+                    _validateField(zipCodeController.text, 'Zip Code')!,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                SizedBox(height: 20),
+                Row(
+                  children: [
+                    Text('Set as default address'),
+                    Switch(
+                      value: isDefault,
+                      onChanged: (value) {
+                        setState(() {
+                          isDefault = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                GFButton(
                   onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
                       final supabaseClient = Supabase.instance.client;
@@ -209,10 +172,12 @@ class _AddNewAddressPageState extends State<AddNewAddressPage> {
                       }
                     }
                   },
-                  child: Text('Save Address'),
+                  text: 'Save Address',
+                  blockButton: true,
+                  color: Color(0xFFF5895A),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

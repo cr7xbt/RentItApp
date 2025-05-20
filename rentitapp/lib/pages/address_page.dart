@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'add_new_address_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:getwidget/getwidget.dart';
 
 class AddressPage extends StatefulWidget {
   @override
@@ -157,15 +158,19 @@ class _AddressPageState extends State<AddressPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Addresses'),
+        title: Text(
+          'Address',
+          style: TextStyle(color: Colors.white), // Change text color to white
+        ),
+        backgroundColor: Color(0xFF078BDC), // Set title bar color to 0xFF078BDC
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: GFLoader(type: GFLoaderType.circle))
           : Column(
               children: [
-                ListTile(
-                  title: Text('Add a new address'),
-                  trailing: Icon(Icons.arrow_forward_ios),
+                GFListTile(
+                  titleText: 'Add a new address',
+                  icon: Icon(Icons.arrow_forward_ios),
                   onTap: () async {
                     final result = await Navigator.push(
                       context,
@@ -193,52 +198,59 @@ class _AddressPageState extends State<AddressPage> {
                       itemCount: addresses.length,
                       itemBuilder: (context, index) {
                         final address = addresses[index];
-                        return Card(
+                        return GFCard(
                           margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${address['address_line1']}, ${address['address_line2'] ?? ''}',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                                Text('${address['city']}, ${address['state']} ${address['zip_code']}'),
-                                if (address['is_default'])
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: Text(
-                                      'Default Address',
-                                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                                    ),
+                          content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${address['address_line1']}, ${address['address_line2'] ?? ''}',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                              Text('${address['city']}, ${address['state']} ${address['zip_code']}'),
+                              if (address['is_default'])
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    'Default Address',
+                                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                                   ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    if (!address['is_default'])
-                                      TextButton(
+                                ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  if (!address['is_default'])
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8.0),
+                                      child: GFButton(
                                         onPressed: () {
                                           _setAsDefaultAddress(address['address_id']);
                                         },
-                                        child: Text('Set as Default'),
+                                        text: 'Set as Default',
+                                        type: GFButtonType.outline,
                                       ),
-                                    TextButton(
+                                    ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    child: GFButton(
                                       onPressed: () {
                                         _editAddress(address);
                                       },
-                                      child: Text('Edit'),
+                                      text: 'Edit',
+                                      type: GFButtonType.outline,
                                     ),
-                                    TextButton(
-                                      onPressed: () {
-                                        _removeAddress(address['address_id']);
-                                      },
-                                      child: Text('Remove'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                  ),
+                                  GFButton(
+                                    onPressed: () {
+                                      _removeAddress(address['address_id']);
+                                    },
+                                    text: 'Remove',
+                                    type: GFButtonType.outline,
+                                    color: GFColors.DANGER,
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         );
                       },

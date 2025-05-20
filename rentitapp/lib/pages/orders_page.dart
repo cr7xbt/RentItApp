@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:getwidget/getwidget.dart';
 
 class OrdersPage extends StatefulWidget {
   @override
@@ -58,7 +59,11 @@ class _OrdersPageState extends State<OrdersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Orders'),
+        title: Text(
+          'Orders',
+          style: TextStyle(color: Color(0xFFF4F8F9)),
+        ),
+        backgroundColor: Color(0xFF078BDC), // Updated header background color to match AccountTab
       ),
       body: ListView(
         children: [
@@ -89,51 +94,35 @@ class _OrdersPageState extends State<OrdersPage> {
 
   Widget _buildOrderCard(Map<String, dynamic> order) {
     final item = order['items'];
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3.24), // Reduced by 10%
-              child: Image.network(
-                item['image_url'] ?? '',
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 100,
-                    height: 100,
-                    color: Colors.grey,
-                    child: Icon(Icons.image, color: Colors.white),
-                  );
-                },
-              ),
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item['name'] ?? 'Unknown Item',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 6),
-                  Text('Price: \$${item['price']}'),
-                  SizedBox(height: 6),
-                  Text('Quantity: ${order['quantity']}'),
-                  SizedBox(height: 6),
-                  Text('Status: ${order['order_status']}'),
-                  SizedBox(height: 6),
-                  Text('Ordered on: ${_formatDate(order['created_at'])}'),
-                ],
-              ),
-            ),
-          ],
+    return GFCard(
+      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: EdgeInsets.all(8),
+      height: 220, // Reduce card height by 20%
+      title: GFListTile(
+        avatar: Padding(
+          padding: const EdgeInsets.only(right: 16.0), // Move image more to the left
+          child: GFAvatar(
+            backgroundImage: NetworkImage(item['image_url'] ?? 'https://via.placeholder.com/150'),
+            radius: 50, // Increase image size
+          ),
         ),
+        titleText: item['name'] ?? 'Unknown Item',
+        subTitleText: 'Price: ₹${item['price']}\nQuantity: ${order['quantity']}\nStatus: ${order['order_status']}\nOrdered on: ${_formatDate(order['created_at'])}',
+        padding: EdgeInsets.symmetric(vertical: 4.0), // Adjust padding for better alignment
+        title: Text(
+          'Order',
+          style: TextStyle(color: Colors.white), // Change text color to white
+        ),
+      ),
+      buttonBar: GFButtonBar(
+        alignment: WrapAlignment.start, // Align closer to the text and image
+        children: [
+          GFButton(
+            onPressed: () {},
+            text: 'View Details',
+            color: Color(0xFFF5895A),
+          ),
+        ],
       ),
     );
   }

@@ -9,6 +9,7 @@ import 'shop_portal_tab.dart'; // Import the shop portal tab
 import '../data/auth_service.dart';
 import 'package:provider/provider.dart';
 import '../models/cart_provider.dart';
+import 'package:getwidget/getwidget.dart';
 
 class HomePage extends StatefulWidget {
   final User user;
@@ -64,21 +65,26 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     final List<Widget> _pages = <Widget>[
       Scaffold(
-        appBar: AppBar(
-          title: Padding(
-            padding: const EdgeInsets.only(top: 8.0), // Adjust the padding as needed
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Image.asset(
-                  'assets/logo.png', // Replace with your logo image path
-                  height: 40, // Adjust the height as needed
-                ),
-              ],
-            ),
+        appBar: GFAppBar(
+          backgroundColor: Color(0xFF078BDC), // Set background color to light blue
+          title: Row(
+            children: [
+              Image.asset(
+                'assets/logo.png', // Replace with your logo image path
+                height: 50, // Adjust the height as needed
+              ),
+              SizedBox(width: 8), // Add spacing between logo and title if needed
+              Text(
+                'Home',
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
           bottom: TabBar(
             controller: _tabController,
+            indicatorColor: Colors.white,
+            labelColor: Colors.white, // Set tab text color to white
+            unselectedLabelColor: Colors.white70, // Slightly dimmed white for unselected tabs
             tabs: [
               Tab(text: 'Products'),
               Tab(text: 'States'),
