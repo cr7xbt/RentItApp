@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/cart_provider.dart'; // Assuming this is where the CartProvider will be created
 import 'pages/login_page.dart';
-import 'pages/shop_items_page.dart'; // Example import
 import 'dart:io';
 
 void testLocalNetworkAccess() async {

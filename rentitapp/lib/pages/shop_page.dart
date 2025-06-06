@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart' as provider;
+import 'package:collection/collection.dart';
 import '../models/shop_item_model.dart';
 import '../models/shop_model.dart';
 import '../models/cart_provider.dart';
 
-class ShopItemsPage extends StatefulWidget {
+class ShopPage extends StatefulWidget {
   final ShopModel shop;
 
-  ShopItemsPage({required this.shop});
+  ShopPage({required this.shop});
 
   @override
-  _ShopItemsPageState createState() => _ShopItemsPageState();
+  _ShopPageState createState() => _ShopPageState();
 }
 
-class _ShopItemsPageState extends State<ShopItemsPage> {
+class _ShopPageState extends State<ShopPage> {
   final SupabaseClient supabase = Supabase.instance.client;
   List<ShopItemModel> items = [];
   bool isLoading = true;
@@ -23,6 +24,7 @@ class _ShopItemsPageState extends State<ShopItemsPage> {
   void initState() {
     super.initState();
     fetchItems();
+    syncCartWithShopPage();
   }
 
   Future<void> fetchItems() async {
@@ -42,6 +44,16 @@ class _ShopItemsPageState extends State<ShopItemsPage> {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  void syncCartWithShopPage() {
+    final cartItems = provider.Provider.of<CartProvider>(context, listen: false).cartItems;
+    for (var cartItem in cartItems) {
+      final shopItem = items.firstWhereOrNull((item) => item.itemId == cartItem.itemId);
+      if (shopItem != null) {
+        shopItem.quantity = cartItem.quantity;
+      }
     }
   }
 
@@ -268,63 +280,77 @@ class _AnimatedAddToCartButtonState extends State<AnimatedAddToCartButton>
       if (itemCount > 0) {
         itemCount--;
         provider.Provider.of<CartProvider>(context, listen: false)
-            .removeItem(widget.item.itemId.toString());
+            .updateItemQuantity(widget.item.itemId, itemCount); // Update quantity in cart
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      transitionBuilder: (child, animation) {
-        return FadeTransition(opacity: animation, child: child);
-      },
-      child: itemCount == 0
-          ? ElevatedButton(
-              key: const ValueKey("AddToCart"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF5895A),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+    return SizedBox(
+      height: 48, // Set consistent height
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeInOut,
+        switchOutCurve: Curves.easeInOut,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        child: itemCount == 0
+            ? SizedBox(
+                width: 140, // Match this width with counter width
+                child: ElevatedButton(
+                  key: const ValueKey("AddToCart"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF5895A),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    _controller.forward();
+                    incrementItem();
+                  },
+                  child: const Text("Add to Cart"),
                 ),
-              ),
-              onPressed: () {
-                _controller.forward();
-                incrementItem();
-              },
-              child: const Text("Add to Cart"),
-            )
-          : ScaleTransition(
-              scale: _scaleAnimation,
-              child: Container(
+              )
+            : SizedBox(
                 key: const ValueKey("Counter"),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.orange, width: 2),
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0), // Made the button vertically thinner
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove, color: Colors.black),
-                      onPressed: decrementItem,
+                width: 140, // Match width
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.orange, width: 2),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    Text(
-                      "$itemCount",
-                      style: const TextStyle(fontSize: 16, color: Colors.black),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove, color: Colors.black),
+                          onPressed: decrementItem,
+                        ),
+                        Text(
+                          "$itemCount",
+                          style: const TextStyle(fontSize: 16, color: Colors.black),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add, color: Colors.black),
+                          onPressed: incrementItem,
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.add, color: Colors.black),
-                      onPressed: incrementItem,
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }

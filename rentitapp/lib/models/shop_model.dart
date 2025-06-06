@@ -8,6 +8,7 @@ class ShopModel {
   final String? imageUrl;
   final String? contactNumber;
   final String? email;
+  final double rating; // Add rating field
 
   ShopModel({
     required this.id,
@@ -19,6 +20,7 @@ class ShopModel {
     this.imageUrl,
     this.contactNumber,
     this.email,
+    this.rating = 0.0, // Default rating
   });
 
   // Factory method to create a ShopModel from a map
@@ -33,6 +35,7 @@ class ShopModel {
       imageUrl: map['image_url'],
       contactNumber: map['contact_number'],
       email: map['email'],
+      rating: (map['rating'] is int) ? (map['rating'] as int).toDouble() : (map['rating'] ?? 0.0),
     );
   }
 }

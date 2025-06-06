@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:collection/collection.dart';
 import '../models/shop_item_model.dart';
 
 class CartProvider extends ChangeNotifier {
@@ -7,7 +8,17 @@ class CartProvider extends ChangeNotifier {
   List<ShopItemModel> get cartItems => List.unmodifiable(_cartItems);
 
   void addItem(ShopItemModel item) {
-    _cartItems.add(item);
+    final existingItem = _cartItems.firstWhereOrNull(
+      (cartItem) => cartItem.itemId == item.itemId,
+    );
+
+    if (existingItem != null) {
+      existingItem.quantity += 1; // Increment quantity if item exists
+    } else {
+      item.quantity = 1; // Initialize quantity for new item
+      _cartItems.add(item);
+    }
+
     notifyListeners();
   }
 
@@ -19,5 +30,17 @@ class CartProvider extends ChangeNotifier {
   void clearCart() {
     _cartItems.clear();
     notifyListeners();
+  }
+
+  void updateItemQuantity(int itemId, int quantity) {
+    final existingItem = _cartItems.firstWhereOrNull((item) => item.itemId == itemId);
+    if (existingItem != null) {
+      if (quantity > 0) {
+        existingItem.quantity = quantity;
+      } else {
+        _cartItems.remove(existingItem); // Remove item if quantity is 0
+      }
+      notifyListeners();
+    }
   }
 }
