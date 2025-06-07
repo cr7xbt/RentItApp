@@ -22,6 +22,19 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateItemQuantity(int itemId, int change) {
+    final existingItem = _cartItems.firstWhereOrNull((item) => item.itemId == itemId);
+    if (existingItem != null) {
+      final newQuantity = existingItem.quantity + change;
+      if (newQuantity > 0) {
+        existingItem.quantity = newQuantity;
+      } else {
+        _cartItems.remove(existingItem); // Remove item if quantity becomes 0 or less
+      }
+      notifyListeners();
+    }
+  }
+
   void removeItem(String itemName) {
     _cartItems.removeWhere((item) => item.name == itemName);
     notifyListeners();
@@ -30,17 +43,5 @@ class CartProvider extends ChangeNotifier {
   void clearCart() {
     _cartItems.clear();
     notifyListeners();
-  }
-
-  void updateItemQuantity(int itemId, int quantity) {
-    final existingItem = _cartItems.firstWhereOrNull((item) => item.itemId == itemId);
-    if (existingItem != null) {
-      if (quantity > 0) {
-        existingItem.quantity = quantity;
-      } else {
-        _cartItems.remove(existingItem); // Remove item if quantity is 0
-      }
-      notifyListeners();
-    }
   }
 }

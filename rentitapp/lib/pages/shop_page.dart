@@ -24,6 +24,11 @@ class _ShopPageState extends State<ShopPage> {
   void initState() {
     super.initState();
     fetchItems();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     syncCartWithShopPage();
   }
 
@@ -48,17 +53,30 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   void syncCartWithShopPage() {
-    final cartItems = provider.Provider.of<CartProvider>(context, listen: false).cartItems;
-    for (var cartItem in cartItems) {
-      final shopItem = items.firstWhereOrNull((item) => item.itemId == cartItem.itemId);
-      if (shopItem != null) {
-        shopItem.quantity = cartItem.quantity;
+    final cartProvider = provider.Provider.of<CartProvider>(context, listen: true);
+    final cartItems = cartProvider.cartItems;
+
+    setState(() {
+      for (var cartItem in cartItems) {
+        final shopItem = items.firstWhereOrNull((item) => item.itemId == cartItem.itemId);
+        if (shopItem != null) {
+          shopItem.quantity = cartItem.quantity;
+        }
       }
-    }
+    });
   }
 
   void addToCart(ShopItemModel item) {
-    provider.Provider.of<CartProvider>(context, listen: false).addItem(item);
+    final cartProvider = provider.Provider.of<CartProvider>(context, listen: false);
+    final existingItem = cartProvider.cartItems.firstWhereOrNull((cartItem) => cartItem.itemId == item.itemId);
+
+    if (existingItem != null) {
+      cartProvider.updateItemQuantity(existingItem.itemId, existingItem.quantity + 1);
+    } else {
+      item.quantity = 1;
+      cartProvider.addItem(item);
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("${item.name} added to cart!")),
     );
@@ -260,6 +278,13 @@ class _AnimatedAddToCartButtonState extends State<AnimatedAddToCartButton>
     );
     _scaleAnimation = Tween<double>(begin: 0.1, end: 1.0)
         .animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
+
+    // Ensure button starts in default state
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        itemCount = 0; // Default state
+      });
+    });
   }
 
   @override
@@ -279,8 +304,7 @@ class _AnimatedAddToCartButtonState extends State<AnimatedAddToCartButton>
     setState(() {
       if (itemCount > 0) {
         itemCount--;
-        provider.Provider.of<CartProvider>(context, listen: false)
-            .updateItemQuantity(widget.item.itemId, itemCount); // Update quantity in cart
+        provider.Provider.of<CartProvider>(context, listen: false).updateItemQuantity(widget.item.itemId, -1);
       }
     });
   }
@@ -354,3 +378,5 @@ class _AnimatedAddToCartButtonState extends State<AnimatedAddToCartButton>
     );
   }
 }
+
+// Remembering user's preference for referring to Add To Cart Button as 'atc'.
