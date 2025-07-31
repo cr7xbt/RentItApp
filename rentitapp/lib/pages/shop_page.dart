@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import '../models/shop_item_model.dart';
 import '../models/shop_model.dart';
 import '../models/cart_provider.dart';
+import 'item_detail_page.dart';
 
 class ShopPage extends StatefulWidget {
   final ShopModel shop;
@@ -28,12 +29,14 @@ class _ShopPageState extends State<ShopPage> {
   bool _isVideoLoading = true;
   bool _showVideoControls = true;
 
+  Map<String, dynamic>? storyData;
+
   @override
   void initState() {
     super.initState();
     fetchItems();
+    fetchStory();
     _searchController.addListener(_onSearchChanged);
-    _initializeVideoPlayer();
   }
 
   @override
@@ -68,6 +71,25 @@ class _ShopPageState extends State<ShopPage> {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> fetchStory() async {
+    try {
+      final response = await supabase
+          .from('stories')
+          .select()
+          .eq('shop_id', widget.shop.id)
+          .single();
+
+      setState(() {
+        storyData = response;
+        if (storyData != null && storyData!['video_url'] != null) {
+          _initializeVideoPlayer(storyData!['video_url']);
+        }
+      });
+    } catch (e) {
+      print('Error fetching story: $e');
     }
   }
 
@@ -116,10 +138,8 @@ class _ShopPageState extends State<ShopPage> {
     );
   }
 
-  void _initializeVideoPlayer() {
-    _videoController = VideoPlayerController.network(
-      'https://lopugfofldvdgnnxmmok.supabase.co/storage/v1/object/public/shop-videos//village_artisan_peacock.mp4',
-    )
+  void _initializeVideoPlayer(String videoUrl) {
+    _videoController = VideoPlayerController.network(videoUrl)
       ..initialize().then((_) {
         setState(() {
           _isVideoLoading = false;
@@ -129,7 +149,7 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   void _hideControlsAfterDelay() {
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(Duration(seconds: 3), () {
       if (mounted && _videoController.value.isPlaying) {
         setState(() {
           _showVideoControls = false;
@@ -148,12 +168,27 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   void _openFullScreenVideo() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FullScreenVideoPlayer(
-          videoController: _videoController,
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => GestureDetector(
+          onVerticalDragUpdate: (details) {
+            if (details.primaryDelta != null && details.primaryDelta! > 20) {
+              Navigator.of(context).pop();
+            }
+          },
+          child: ScaleTransition(
+            scale: animation,
+            child: FullScreenVideoPlayer(
+              videoController: _videoController,
+            ),
+          ),
         ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return ScaleTransition(
+            scale: animation,
+            child: child,
+          );
+        },
       ),
     );
   }
@@ -172,306 +207,309 @@ class _ShopPageState extends State<ShopPage> {
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
-        body: Column(
+        body: Stack(
           children: [
-            // Header Section
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundImage: NetworkImage(widget.shop.imageUrl ?? ''),
-                    backgroundColor: Colors.grey[200],
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.shop.name,
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.shop.description ?? 'No description available.',
-                          style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
+            Column(
+              children: [
+                // Header Section
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundImage: NetworkImage(widget.shop.imageUrl ?? ''),
+                        backgroundColor: Colors.grey[200],
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ...List.generate(5, (starIndex) {
-                              double rating = widget.shop.rating;
-                              IconData iconData;
-                              Color color;
-                              if (rating >= starIndex + 1) {
-                                iconData = Icons.star;
-                                color = Colors.amber;
-                              } else if (rating > starIndex && rating < starIndex + 1) {
-                                iconData = Icons.star_half;
-                                color = Colors.amber;
-                              } else {
-                                iconData = Icons.star_border;
-                                color = Colors.grey;
-                              }
-                              return Icon(iconData, color: color, size: 20);
-                            }),
-                            const SizedBox(width: 4),
                             Text(
-                              widget.shop.rating.toStringAsFixed(1),
+                              widget.shop.name,
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.shop.description ?? 'No description available.',
                               style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 2),
-            TabBar(
-              tabs: [
-                Tab(text: 'Items'),
-                Tab(text: 'Story'),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  // Items Tab
-                  Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Search items...',
-                            prefixIcon: Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                ...List.generate(5, (starIndex) {
+                                  double rating = widget.shop.rating;
+                                  IconData iconData;
+                                  Color color;
+                                  if (rating >= starIndex + 1) {
+                                    iconData = Icons.star;
+                                    color = Colors.amber;
+                                  } else if (rating > starIndex && rating < starIndex + 1) {
+                                    iconData = Icons.star_half;
+                                    color = Colors.amber;
+                                  } else {
+                                    iconData = Icons.star_border;
+                                    color = Colors.grey;
+                                  }
+                                  return Icon(iconData, color: color, size: 20);
+                                }),
+                                const SizedBox(width: 4),
+                                Text(
+                                  widget.shop.rating.toStringAsFixed(1),
+                                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                                ),
+                              ],
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ListView.builder(
-                            itemCount: filteredItems.length,
-                            itemBuilder: (context, index) {
-                              final item = filteredItems[index];
-                              return Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 4.0,
-                                margin: const EdgeInsets.symmetric(vertical: 8.0),
-                                child: Container(
-                                  height: 220,
-                                  padding: const EdgeInsets.all(12.0),
-                                  child: Row(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Image.network(
-                                          item.imageUrl ?? '',
-                                          width: 120,
-                                          height: double.infinity,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Container(
-                                              width: 120,
-                                              height: double.infinity,
-                                              color: Colors.grey,
-                                              child: Icon(Icons.image, color: Colors.white),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  item.name,
-                                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                                ),
-                                                const SizedBox(height: 6),
-                                                Text(
-                                                  item.description ?? '',
-                                                  style: TextStyle(fontSize: 14),
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                                const SizedBox(height: 6),
-                                                Text(
-                                                  '₹${item.price.toStringAsFixed(2)}',
-                                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                                ),
-                                                Text('Stock: ${item.stockQuantity}'),
-                                                Text('Category: ${item.category ?? 'N/A'}'),
-                                              ],
-                                            ),
-                                            Row(
-                                              children: [
-                                                AnimatedAddToCartButton(item: item),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-
-                  // Story Tab
-                  SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                const SizedBox(height: 2),
+                TabBar(
+                  tabs: [
+                    Tab(text: 'Items'),
+                    Tab(text: 'Story'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      // Items Tab
+                      Column(
                         children: [
-                          if (_isVideoLoading)
-                            Center(child: CircularProgressIndicator())
-                          else
-                            Column(
-                              children: [
-                                Container(
-                                  height: MediaQuery.of(context).size.width * 0.36, // 60% of original height (40% reduction)
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    color: Colors.black,
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: GestureDetector(
-                                    onTap: _toggleVideoControls,
-                                    child: Stack(
-                                      children: [
-                                        Center(
-                                          child: AspectRatio(
-                                            aspectRatio: _videoController.value.aspectRatio,
-                                            child: VideoPlayer(_videoController),
-                                          ),
-                                        ),
-                                        // Play/Pause button with fade animation
-                                        AnimatedOpacity(
-                                          opacity: _showVideoControls ? 1.0 : 0.0,
-                                          duration: Duration(milliseconds: 300),
-                                          child: Center(
-                                            child: GestureDetector(
-                                              onTap: () {
-                                                setState(() {
-                                                  if (_videoController.value.isPlaying) {
-                                                    _videoController.pause();
-                                                  } else {
-                                                    _videoController.play();
-                                                    _hideControlsAfterDelay();
-                                                  }
-                                                });
-                                              },
-                                              child: Icon(
-                                                _videoController.value.isPlaying
-                                                    ? Icons.pause_circle_filled
-                                                    : Icons.play_circle_filled,
-                                                color: Colors.white.withOpacity(0.8),
-                                                size: 64,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        // Full screen button with fade animation
-                                        AnimatedOpacity(
-                                          opacity: _showVideoControls ? 1.0 : 0.0,
-                                          duration: Duration(milliseconds: 300),
-                                          child: Positioned(
-                                            bottom: 8,
-                                            right: 8,
-                                            child: GestureDetector(
-                                              onTap: () {
-                                                _openFullScreenVideo();
-                                              },
-                                              child: Container(
-                                                padding: EdgeInsets.all(8),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.black.withOpacity(0.6),
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                                child: Icon(
-                                                  Icons.fullscreen,
-                                                  color: Colors.white,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Search items...',
+                                prefixIcon: Icon(Icons.search),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                const SizedBox(height: 12),
-                                AnimatedOpacity(
-                                  opacity: _showVideoControls ? 1.0 : 0.0,
-                                  duration: Duration(milliseconds: 300),
-                                  child: VideoProgressIndicator(
-                                    _videoController,
-                                    allowScrubbing: true,
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
-
-                          const SizedBox(height: 24),
-
-                          Text(
-                            'About the Shop',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'This shop has a rich history of providing quality products and services to its customers. Established in 1990, it has grown to become a trusted name in the community.',
-                            style: TextStyle(fontSize: 16),
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            'Highlights',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ListView.builder(
+                                itemCount: filteredItems.length,
+                                itemBuilder: (context, index) {
+                                  final item = filteredItems[index];
+                                  return Card(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    elevation: 4.0,
+                                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ItemDetailPage(item: item),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        height: 220,
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: Row(
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(12),
+                                              child: Image.network(
+                                                item.imageUrl ?? '',
+                                                width: 120,
+                                                height: double.infinity,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Container(
+                                                    width: 120,
+                                                    height: double.infinity,
+                                                    color: Colors.grey,
+                                                    child: Icon(Icons.image, color: Colors.white),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        item.name,
+                                                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                                      ),
+                                                      const SizedBox(height: 6),
+                                                      Text(
+                                                        item.description ?? '',
+                                                        style: TextStyle(fontSize: 14),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                      const SizedBox(height: 6),
+                                                      Text(
+                                                        '₹${item.price.toStringAsFixed(2)}',
+                                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                                      ),
+                                                      Text('Stock: ${item.stockQuantity}'),
+                                                      Text('Category: ${item.category ?? 'N/A'}'),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      AnimatedAddToCartButton(item: item),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text('• High-quality products'),
-                              Text('• Excellent customer service'),
-                              Text('• Affordable pricing'),
-                              Text('• Convenient location'),
-                              Text('• Trusted by the community'),
-                            ],
+                        ],
+                      ),
+
+                      // Story Tab
+                      buildStoryTab(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildStoryTab() {
+    if (storyData == null || storyData!.isEmpty) {
+      return Center(
+        child: Text(
+          'No story added yet',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_isVideoLoading)
+              Center(child: CircularProgressIndicator())
+            else
+              Column(
+                children: [
+                  Container(
+                    height: MediaQuery.of(context).size.width * 0.468,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.black,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: GestureDetector(
+                      onTap: _toggleVideoControls,
+                      child: Stack(
+                        children: [
+                          Center(
+                            child: AspectRatio(
+                              aspectRatio: _videoController.value.aspectRatio,
+                              child: VideoPlayer(_videoController),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: _openFullScreenVideo,
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.6),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.fullscreen,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                          AnimatedOpacity(
+                            opacity: _showVideoControls ? 1.0 : 0.0,
+                            duration: Duration(milliseconds: 300),
+                            child: Center(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    if (_videoController.value.isPlaying) {
+                                      _videoController.pause();
+                                    } else {
+                                      _videoController.play();
+                                      _hideControlsAfterDelay();
+                                    }
+                                  });
+                                },
+                                child: Icon(
+                                  _videoController.value.isPlaying
+                                      ? Icons.pause_circle_filled
+                                      : Icons.play_circle_filled,
+                                  color: Colors.white.withOpacity(0.8),
+                                  size: 64,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  AnimatedOpacity(
+                    opacity: _showVideoControls ? 1.0 : 0.0,
+                    duration: Duration(milliseconds: 300),
+                    child: VideoProgressIndicator(
+                      _videoController,
+                      allowScrubbing: true,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
                 ],
               ),
+
+            const SizedBox(height: 24),
+
+            Text(
+              storyData?['title'] ?? 'Story Title',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              storyData?['description'] ?? 'No description available.',
+              style: TextStyle(fontSize: 16),
             ),
           ],
         ),
@@ -607,7 +645,7 @@ class _AnimatedAddToCartButtonState extends State<AnimatedAddToCartButton>
 class FullScreenVideoPlayer extends StatefulWidget {
   final VideoPlayerController videoController;
 
-  const FullScreenVideoPlayer({required this.videoController, Key? key}) : super(key: key);
+  FullScreenVideoPlayer({required this.videoController});
 
   @override
   _FullScreenVideoPlayerState createState() => _FullScreenVideoPlayerState();
@@ -616,130 +654,58 @@ class FullScreenVideoPlayer extends StatefulWidget {
 class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
   bool _showControls = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _hideControlsAfterDelay();
-  }
-
-  void _hideControlsAfterDelay() {
-    Future.delayed(Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _showControls = false;
-        });
+  void _togglePlayPause() {
+    setState(() {
+      if (widget.videoController.value.isPlaying) {
+        widget.videoController.pause();
+      } else {
+        widget.videoController.play();
       }
     });
-  }
-
-  void _toggleControls() {
-    setState(() {
-      _showControls = !_showControls;
-    });
-    if (_showControls) {
-      _hideControlsAfterDelay();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: GestureDetector(
-        onTap: _toggleControls,
-        child: Stack(
-          children: [
+      body: Stack(
+        children: [
+          Center(
+            child: AspectRatio(
+              aspectRatio: widget.videoController.value.aspectRatio,
+              child: VideoPlayer(widget.videoController),
+            ),
+          ),
+          // Play/Pause button overlay
+          if (_showControls)
             Center(
-              child: AspectRatio(
-                aspectRatio: widget.videoController.value.aspectRatio,
-                child: VideoPlayer(widget.videoController),
+              child: GestureDetector(
+                onTap: _togglePlayPause,
+                child: Icon(
+                  widget.videoController.value.isPlaying
+                      ? Icons.pause_circle_filled
+                      : Icons.play_circle_filled,
+                  color: Colors.white,
+                  size: 64,
+                ),
               ),
             ),
-            if (_showControls) ...[
-              // Top bar with back button
-              Positioned(
-                top: MediaQuery.of(context).padding.top,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.7),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.arrow_back, color: Colors.white, size: 28),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                ),
+          // Progress bar at the bottom
+          Positioned(
+            bottom: 40, // Adjusted from 0 to 20 pixels
+            left: 0,
+            right: 0,
+            child: VideoProgressIndicator(
+              widget.videoController,
+              allowScrubbing: true,
+              colors: VideoProgressColors(
+                playedColor: Colors.white,
+                bufferedColor: Colors.white.withOpacity(0.5),
+                backgroundColor: Colors.white.withOpacity(0.2),
               ),
-              // Center play/pause button
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      widget.videoController.value.isPlaying
-                          ? widget.videoController.pause()
-                          : widget.videoController.play();
-                    });
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      widget.videoController.value.isPlaying
-                          ? Icons.pause
-                          : Icons.play_arrow,
-                      color: Colors.white,
-                      size: 48,
-                    ),
-                  ),
-                ),
-              ),
-              // Bottom controls
-              Positioned(
-                bottom: MediaQuery.of(context).padding.bottom + 16,
-                left: 16,
-                right: 16,
-                child: Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.7),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  child: VideoProgressIndicator(
-                    widget.videoController,
-                    allowScrubbing: true,
-                    colors: VideoProgressColors(
-                      playedColor: Colors.white,
-                      bufferedColor: Colors.white.withOpacity(0.5),
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

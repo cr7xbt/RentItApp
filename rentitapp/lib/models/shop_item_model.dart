@@ -9,6 +9,7 @@ class ShopItemModel {
   final String? imageUrl;
   final DateTime createdAt;
   int quantity; // Add quantity property
+  final double rating; // Add rating property
 
   ShopItemModel({
     required this.itemId,
@@ -21,6 +22,7 @@ class ShopItemModel {
     this.imageUrl,
     required this.createdAt,
     this.quantity = 1, // Default quantity to 1
+    required this.rating, // Add rating to constructor
   });
 
   // Factory method to create a ShopItemModel from a map
@@ -36,6 +38,7 @@ class ShopItemModel {
       imageUrl: map['image_url'],
       createdAt: DateTime.parse(map['created_at']),
       quantity: map['quantity'] ?? 1, // Default to 1 if not provided
+      rating: map['rating'] ?? 0.0, // Default to 0.0 if not provided
     );
   }
 }

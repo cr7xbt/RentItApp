@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthService {
   final firebase_auth.FirebaseAuth _firebaseAuth = firebase_auth.FirebaseAuth.instance;
@@ -22,18 +23,16 @@ class AuthService {
       String lastName = nameParts.length > 1 ? nameParts[1] : '';
 
       // Save user data to Supabase
-      final response = await _supabaseClient.from('users').insert({
+      await _supabaseClient.from('users').insert({
         'first_name': firstName,
         'last_name': lastName,
         'email': email,
         'login_status': true,
-      }).execute();
+      });
 
-      if (response.status != 204) {
-        throw Exception('Failed to save user to Supabase: ${response.toString()}');
-      }
     } catch (e) {
-      print('Error saving user to Supabase: $e');
+      // Remove print statement for production
+      debugPrint('Error saving user to Supabase: $e');
     }
   }
 
@@ -46,15 +45,12 @@ class AuthService {
       }
 
       // Update login status in Supabase
-      final response = await _supabaseClient.from('users').update({
+      await _supabaseClient.from('users').update({
         'login_status': isLoggedIn,
-      }).eq('email', firebaseUser.email).execute();
+      }).eq('email', firebaseUser.email);
 
-      if (response.status != 204) {
-        throw Exception('Failed to update login status: ${response.toString()}');
-      }
     } catch (e) {
-      print('Error updating login status: $e');
+      debugPrint('Error updating login status: $e');
     }
   }
 }

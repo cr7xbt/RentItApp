@@ -10,9 +10,11 @@ import 'dart:io';
 void testLocalNetworkAccess() async {
   try {
     final result = await InternetAddress.lookup('192.168.1.1'); // Replace with a local IP
-    print('Local network access successful: $result');
+    // Remove print statement for production
+    debugPrint('Local network access successful: $result');
   } catch (e) {
-    print('Local network access failed: $e');
+    // Remove print statement for production
+    debugPrint('Local network access failed: $e');
   }
 }
 
@@ -21,7 +23,7 @@ void main() async {
   try {
     await dotenv.load();
   } catch (e) {
-    print('Error loading .env file: $e');
+    debugPrint('Error loading .env file: $e');
   }
   testLocalNetworkAccess(); // Added for network testing
   await Firebase.initializeApp(); // Initializes Firebase
@@ -30,10 +32,12 @@ void main() async {
     url: 'https://lopugfofldvdgnnxmmok.supabase.co', // Replace with your Supabase URL
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvcHVnZm9mbGR2ZGdubnhtbW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkwMzYwMDksImV4cCI6MjA1NDYxMjAwOX0.TVtJXo8oyyWpBV70bOvy_rSOU3IEh2bARoWrn41qhDY', // Replace with your Supabase anon key
   );
-  runApp(RentItApp());
+  runApp(const RentItApp());
 }
 
 class RentItApp extends StatelessWidget {
+  const RentItApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(

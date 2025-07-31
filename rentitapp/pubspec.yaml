@@ -52,6 +52,8 @@ dependencies:
   getwidget: ^6.0.0
   get: ^4.6.5
   video_player: ^2.10.0
+  http: ^0.13.6
+  collection: ^1.18.0
 
 dev_dependencies:
   flutter_test:
